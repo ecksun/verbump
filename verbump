@@ -3,10 +3,17 @@
 set -e
 set -u
 
-if ! hash semver 2>/dev/null; then
-    >&2 echo "Please install semver (npm install -g semver)"
-    exit 1
-fi
+assert_dependency() {
+    local dep="$1"
+    local reason="$2"
+    local hint="$3"
+    if ! hash $dep 2>/dev/null; then
+        >&2 echo "Dependency $dep missing. $reason ($hint)"
+        exit 1
+    fi
+}
+
+assert_dependency semver "Required" "npm install -g semver"
 
 bump_sbt() {
     local bump_level="$1"
@@ -14,13 +21,35 @@ bump_sbt() {
     local new_version=$(semver "$version" -i $bump_level)
     sed -i 's/version := .*/version := "'"$new_version"'"/' build.sbt
     git add build.sbt
-    echo "$new_version"
+    commit_tag "$new_version"
+}
+
+bump_npm() {
+    assert_dependency npm "npm is required to bump package.json version" "sudo apt install npm"
+    local bump_level="$1"
+    npm version "$bump_level" | cut -c 2-
 }
 
 commit_tag() {
     local version="$1"
     git commit -m "$version"
     git tag --annotate --message "$version" v${version}
+}
+
+bump() {
+    local bump_level="$1"
+    local package_type="$2"
+    local package_file="$3"
+    if [ -f "$package_file" ]; then
+        local new_version=""
+        case "$package_type" in
+            npm) new_version=$(bump_npm "$bump_level");;
+            sbt) new_version=$(bump_sbt "$bump_level");;
+            *) 2>&1 echo "Unsuported format"; exit 2 ;;
+        esac
+
+        echo "Bumped $package_type $bump_level verison to $new_version"
+    fi
 }
 
 get_bump_level() {
@@ -42,14 +71,9 @@ get_bump_level() {
 
 bump_all() {
     local bump_level=$(get_bump_level "${1}")
-    local new_version=""
-    if [ -f build.sbt ]; then
-        new_version=$(bump_sbt "$bump_level")
-    fi
-    echo "Bumping $bump_level verison to $new_version"
-    if [ -n "$new_version" ]; then
-        commit_tag "$new_version"
-    fi
+
+    bump "$bump_level" sbt build.sbt
+    bump "$bump_level" npm package.json
 }
 
 bump_all "${1-patch}"
