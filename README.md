@@ -13,6 +13,7 @@ How the version is stored is dependent on the type of project.
     # is one of them
     mkdir -p ~/bin
     wget https://gitlab.com/ecksun/verbump/raw/master/verbump -O ~/bin/verbump
+    chmod +x ~/bin/verbump
 ```
 
 ## runtime dependencies
