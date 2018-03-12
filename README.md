@@ -33,3 +33,4 @@ How the version is stored is dependent on the type of project.
 | ---             | ---          | ---                                    |
 | sbt             | build.sbt    | Change the line matching `version := ` |
 | npm             | package.json | delegate to `npm version`              |
+| git             | -            | Simply tag the version                 |

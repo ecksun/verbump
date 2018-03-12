@@ -42,6 +42,17 @@ bump_npm() {
     npm version "$bump_level" | cut -c 2-
 }
 
+bump_git() {
+    local bump_level
+    local version
+    local new_version
+    bump_level="$1"
+    version=$(git describe --always --match v[0-9]* HEAD | cut -c2-)
+    new_version=$(semver "$version" -i "$bump_level")
+    git tag --annotate --message "$new_version" "v${new_version}"
+    echo "[GIT] Bumped $bump_level verison: $version -> $new_version"
+}
+
 commit_tag() {
     local version="$1"
     git commit -m "$version"
@@ -71,6 +82,9 @@ bump_all() {
 
     is_sbt && bump_sbt "$bump_level"
     is_npm && bump_npm "$bump_level"
+    if [[ ! ( $(is_sbt) || $(is_npm) ) ]]; then
+        bump_git "$bump_level"
+    fi
 }
 
 bump_all "${1-patch}"
