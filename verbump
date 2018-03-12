@@ -15,6 +15,10 @@ assert_dependency() {
 
 assert_dependency semver "Required" "npm install -g semver"
 
+is_sbt() {
+    [ -f build.sbt ]
+}
+
 bump_sbt() {
     local bump_level
     local version
@@ -25,6 +29,11 @@ bump_sbt() {
     sed -i 's/version := .*/version := "'"$new_version"'"/' build.sbt
     git add build.sbt
     commit_tag "$new_version"
+    echo "[SBT] Bumped $bump_level verison: $version -> $new_version"
+}
+
+is_npm() {
+    [ -f package.json ]
 }
 
 bump_npm() {
@@ -37,22 +46,6 @@ commit_tag() {
     local version="$1"
     git commit -m "$version"
     git tag --annotate --message "$version" "v${version}"
-}
-
-bump() {
-    local bump_level="$1"
-    local package_type="$2"
-    local package_file="$3"
-    if [ -f "$package_file" ]; then
-        local new_version=""
-        case "$package_type" in
-            npm) new_version=$(bump_npm "$bump_level");;
-            sbt) new_version=$(bump_sbt "$bump_level");;
-            *) 2>&1 echo "Unsuported format"; exit 2 ;;
-        esac
-
-        echo "Bumped $package_type $bump_level verison to $new_version"
-    fi
 }
 
 get_bump_level() {
@@ -76,8 +69,8 @@ bump_all() {
     local bump_level
     bump_level=$(get_bump_level "${1}")
 
-    bump "$bump_level" sbt build.sbt
-    bump "$bump_level" npm package.json
+    is_sbt && bump_sbt "$bump_level"
+    is_npm && bump_npm "$bump_level"
 }
 
 bump_all "${1-patch}"
