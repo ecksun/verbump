@@ -47,7 +47,7 @@ bump_git() {
     local version
     local new_version
     bump_level="$1"
-    version=$(git describe --always --match v[0-9]* HEAD | cut -c2-)
+    version=$(git describe --abbrev=0 --always --match v[0-9]* HEAD | cut -c2-)
     new_version=$(semver "$version" -i "$bump_level")
     git tag --annotate --message "$new_version" "v${new_version}"
     echo "[GIT] Bumped $bump_level verison: $version -> $new_version"
