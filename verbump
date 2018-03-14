@@ -80,9 +80,11 @@ bump_all() {
     local bump_level
     bump_level=$(get_bump_level "${1}")
 
-    is_sbt && bump_sbt "$bump_level"
-    is_npm && bump_npm "$bump_level"
-    if [[ ! ( $(is_sbt) || $(is_npm) ) ]]; then
+    if is_sbt; then
+        bump_sbt "$bump_level"
+    elif is_npm; then
+        bump_npm "$bump_level"
+    else
         bump_git "$bump_level"
     fi
 }
